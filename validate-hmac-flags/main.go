@@ -17,21 +17,27 @@ func main() {
 
 	flag.StringVar(&inputVar, "message", "", "message to create a digest from")
 	flag.StringVar(&secretVar, "secret", "", "secret for the digest")
-	flag.StringVar(&modeVar, "mode", "", "define if the cli generate or validate the digest")
+	flag.StringVar(&modeVar, "mode", "", "define if the cli [generate] or [validate] the digest")
 	flag.StringVar(&digestVar, "digest", "", "digest to validate")
 	flag.Parse()
 
 	if len(strings.TrimSpace(secretVar)) == 0 {
 		panic("--secret is required")
 	}
-	if len(strings.TrimSpace(secretVar)) == 0 && (modeVar != "generate" || modeVar != "validate") {
-		panic("--secret is required")
+	if len(strings.TrimSpace(modeVar)) == 0 {
+		panic("--mode is required")
 	}
-
-	fmt.Printf("Computing hash for: %q\n", inputVar)
-	fmt.Printf("Secret:%q\n", secretVar)
 
 	digest := hmac.Sign([]byte(inputVar), []byte(secretVar), sha256.New)
 
-	fmt.Printf("Digest: %x\n", digest)
+	if modeVar == "generate" {
+		fmt.Printf("Digest: %x\n", digest)
+		return
+	} else if modeVar == "validate" {
+		err := hmac.Validate([]byte(inputVar), fmt.Sprintf("sha256=%x", digest), string(secretVar))
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("Digest valid.")
+	}
 }
